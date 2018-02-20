@@ -1,0 +1,636 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf200
+{\fonttbl\f0\fmodern\fcharset0 CourierNewPSMT;\f1\fnil\fcharset0 Monaco;\f2\fswiss\fcharset0 Helvetica;
+}
+{\colortbl;\red255\green255\blue255;\red184\green14\blue61;\red247\green238\blue241;\red62\green62\blue62;
+\red255\green255\blue255;\red65\green74\blue82;\red249\green250\blue251;\red38\green38\blue38;\red0\green0\blue0;
+\red35\green46\blue57;\red135\green136\blue117;\red14\green110\blue109;}
+{\*\expandedcolortbl;;\cssrgb\c78039\c14510\c30588;\cssrgb\c97647\c94902\c95686;\cssrgb\c30980\c30980\c30980;
+\cssrgb\c100000\c100000\c100000;\cssrgb\c32157\c36078\c39608;\cssrgb\c98039\c98431\c98824;\cssrgb\c20000\c20000\c20000;\cssrgb\c0\c0\c0;
+\cssrgb\c18039\c23922\c28627;\cssrgb\c60000\c60000\c53333;\cssrgb\c0\c50196\c50196;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sl380\partightenfactor0
+
+\f0\fs28 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 #findChessboardCorners()\cf4 \cb5 \strokec4 \'a0\
+\cf2 \cb3 \strokec2 #drawChessboardCorners()\
+\
+import numpy as np\
+import cv2\
+import matplotlib.pyplot as plt\
+import matplotlib.image as mpimg\
+\
+# prepare object points\
+nx = 8#TODO: enter the number of inside corners in x\
+ny = 6#TODO: enter the number of inside corners in y\
+\
+# Make a list of calibration images\
+fname = 'calibration_test.png'\
+img = cv2.imread(fname)\
+\
+# Convert to grayscale\
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\
+\
+# Find the chessboard corners\
+ret, corners = cv2.findChessboardCorners(gray, (nx, ny), None)\
+\
+# If found, draw corners\
+if ret == True:\
+    # Draw and display the corners\
+    cv2.drawChessboardCorners(img, (nx, ny), corners, ret)\
+    plt.imshow(img)\
+\
+###================================\
+\pard\pardeftab720\sl400\partightenfactor0
+
+\fs30 \cf6 \cb7 \strokec6 #dst = cv2.undistort(img, mtx, dist, \cf8 \strokec8 None\cf6 \strokec6 , mtx)\
+\pard\pardeftab720\sl380\partightenfactor0
+
+\fs28 \cf9 \cb1 \strokec9 \
+import pickle\
+import cv2\
+import numpy as np\
+import matplotlib.pyplot as plt\
+import matplotlib.image as mpimg\
+\
+# Read in the saved objpoints and imgpoints\
+dist_pickle = pickle.load( open( "wide_dist_pickle.p", "rb" ) )\
+objpoints = dist_pickle["objpoints"]\
+imgpoints = dist_pickle["imgpoints"]\
+\
+# Read in an image\
+img = cv2.imread('test_image.png')\
+\
+# TODO: Write a function that takes an image, object points, and image points\
+# performs the camera calibration, image distortion correction and \
+# returns the undistorted image\
+def cal_undistort(img, objpoints, imgpoints):\
+    # Use cv2.calibrateCamera() and cv2.undistort()\
+    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)\
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, \
+                                                        gray.shape[::-1], \
+                                                        None, None)\
+    \
+    undist = cv2.undistort(img, mtx, dist, None, mtx)\
+    #undist = np.copy(img)  # Delete this line\
+    \
+    return undist\
+\
+undistorted = cal_undistort(img, objpoints, imgpoints)\
+\
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))\
+f.tight_layout()\
+ax1.imshow(img)\
+ax1.set_title('Original Image', fontsize=50)\
+ax2.imshow(undistorted)\
+ax2.set_title('Undistorted Image', fontsize=50)\
+plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)\
+\
+###======================================================\
+\pard\pardeftab720\sl320\partightenfactor0
+\cf4 \cb5 \strokec4 """\
+Compute the perspective transform, M, given source and destination points:
+\fs30 \cf6 \cb7 \strokec6 \
+\pard\pardeftab720\sl400\partightenfactor0
+\cf6 M = cv2.getPerspectiveTransform(src, dst)\
+\pard\pardeftab720\sl340\sa300\partightenfactor0
+
+\fs21 \cf4 \cb5 \strokec4 Compute the inverse perspective transform:\
+\pard\pardeftab720\sl400\partightenfactor0
+
+\fs30 \cf6 \cb7 \strokec6 Minv = cv2.getPerspectiveTransform(dst, src)\
+\pard\pardeftab720\sl340\sa300\partightenfactor0
+
+\fs21 \cf4 \cb5 \strokec4 Warp an image using the perspective transform, M:\
+\pard\pardeftab720\sl400\partightenfactor0
+
+\fs30 \cf6 \cb7 \strokec6 warped = cv2.warpPerspective(img, M, img_size, flags=cv2.INTER_LINEAR)\
+\pard\pardeftab720\sl380\partightenfactor0
+
+\fs28 \cf9 \cb1 \strokec9 """\
+\
+import pickle\
+import cv2\
+import numpy as np\
+import matplotlib.pyplot as plt\
+import matplotlib.image as mpimg\
+\
+# Read in the saved camera matrix and distortion coefficients\
+# These are the arrays you calculated using cv2.calibrateCamera()\
+dist_pickle = pickle.load( open( "wide_dist_pickle.p", "rb" ) )\
+mtx = dist_pickle["mtx"]\
+dist = dist_pickle["dist"]\
+\
+# Read in an image\
+img = cv2.imread('test_image2.png')\
+nx = 8 # the number of inside corners in x\
+ny = 6 # the number of inside corners in y\
+\
+# MODIFY THIS FUNCTION TO GENERATE OUTPUT \
+# THAT LOOKS LIKE THE IMAGE ABOVE\
+def corners_unwarp(img, nx, ny, mtx, dist):\
+    # Pass in your image into this function\
+    # Write code to do the following steps\
+    # 1) Undistort using mtx and dist\
+    undist = cv2.undistort(img, mtx, dist, None, mtx)\
+    # 2) Convert to grayscale\
+    gray = cv2.cvtColor(undist, cv2.COLOR_BGR2GRAY)\
+    # 3) Find the chessboard corners\
+    ret, corners = cv2.findChessboardCorners(gray, (nx, ny), None)\
+    # 4) If corners found: \
+            # a) draw corners\
+            # b) define 4 source points src = np.float32([[,],[,],[,],[,]])\
+                 #Note: you could pick any four of the detected corners \
+                 # as long as those four corners define a rectangle\
+                 #One especially smart way to do this would be to use four well-chosen\
+                 # corners that were automatically detected during the undistortion steps\
+                 #We recommend using the automatic detection of corners in your code\
+            # c) define 4 destination points dst = np.float32([[,],[,],[,],[,]])\
+            # d) use cv2.getPerspectiveTransform() to get M, the transform matrix\
+            # e) use cv2.warpPerspective() to warp your image to a top-down view\
+    \
+    #print(ret, corners)\
+    \
+    #delete the next two lines\
+    M = None\
+    warped = np.copy(img)     \
+    \
+    if ret:\
+        cv2.drawChessboardCorners(gray, (nx, ny), corners, ret)\
+        \
+        offset = 100\
+        img_size = (gray.shape[1], gray.shape[0])\
+\
+        src = np.float32([corners[0], corners[nx-1], corners[-1], corners[-nx]])\
+        print("###src", src)\
+        \
+        dst = np.float32([[offset, offset], [img_size[0]-offset, offset], \
+                                     [img_size[0]-offset, img_size[1]-offset], \
+                                     [offset, img_size[1]-offset]])        \
+        \
+        \
+        M = cv2.getPerspectiveTransform(src, dst)\
+        warped = cv2.warpPerspective(undist, M, img_size)\
+    \
+    return warped, M\
+\
+top_down, perspective_M = corners_unwarp(img, nx, ny, mtx, dist)\
+\
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))\
+f.tight_layout()\
+ax1.imshow(img)\
+ax1.set_title('Original Image', fontsize=50)\
+ax2.imshow(top_down)\
+ax2.set_title('Undistorted and Warped Image', fontsize=50)\
+plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)\
+\
+###=======================\
+# Sobel\
+\
+"""\
+\pard\pardeftab720\sl400\partightenfactor0
+
+\fs30 \cf6 \cb7 \strokec6 gray = cv2.cvtColor(im, cv2.COLOR_RGB2GRAY)\
+obelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0)\
+sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1)\
+abs_sobelx = np.absolute(sobelx)\
+scaled_sobel = np.uint8(255*abs_sobelx/np.max(abs_sobelx))\
+\pard\pardeftab720\sl380\partightenfactor0
+
+\fs28 \cf9 \cb1 \strokec9 """\
+\
+import numpy as np\
+import cv2\
+import matplotlib.pyplot as plt\
+import matplotlib.image as mpimg\
+import pickle\
+\
+\
+# Read in an image and grayscale it\
+image = mpimg.imread('signs_vehicles_xygrad.png')\
+\
+# Define a function that applies Sobel x or y, \
+# then takes an absolute value and applies a threshold.\
+# Note: calling your function with orient='x', thresh_min=5, thresh_max=100\
+# should produce output like the example image shown above this quiz.\
+def abs_sobel_thresh(img, orient='x', thresh_min=0, thresh_max=255):\
+    \
+    # Apply the following steps to img\
+    # 1) Convert to grayscale\
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)\
+    \
+    # 2) Take the derivative in x or y given orient = 'x' or 'y'\
+    sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0)\
+    \
+    # 3) Take the absolute value of the derivative or gradient\
+    abs_sobelx = np.absolute(sobelx)\
+    \
+    # 4) Scale to 8-bit (0 - 255) then convert to type = np.uint8\
+    scaled_sobel = np.uint8(255*abs_sobelx/np.max(abs_sobelx))\
+    \
+    # 5) Create a mask of 1's where the scaled gradient magnitude \
+            # is > thresh_min and < thresh_max\
+    binary_output = (scaled_sobel >= thresh_min) & (scaled_sobel <= thresh_max)\
+    binary_output = binary_output.astype(int)\
+            \
+    # 6) Return this mask as your binary_output image\
+    #binary_output = np.copy(img) # Remove this line\
+    return binary_output\
+    \
+# Run the function\
+grad_binary = abs_sobel_thresh(image, orient='x', thresh_min=20, thresh_max=100)\
+# Plot the result\
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))\
+f.tight_layout()\
+ax1.imshow(image)\
+ax1.set_title('Original Image', fontsize=50)\
+ax2.imshow(grad_binary, cmap='gray')\
+ax2.set_title('Thresholded Gradient', fontsize=50)\
+plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)\
+\
+###=======================\
+import numpy as np\
+import cv2\
+import matplotlib.pyplot as plt\
+import matplotlib.image as mpimg\
+import pickle\
+import math\
+\
+# Read in an image\
+image = mpimg.imread('signs_vehicles_xygrad.png')\
+\
+# Define a function that applies Sobel x and y, \
+# then computes the magnitude of the gradient\
+# and applies a threshold\
+def mag_thresh(img, sobel_kernel=3, mag_thresh=(0, 255)):\
+    \
+    # Apply the following steps to img\
+    # 1) Convert to grayscale\
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)\
+    \
+    # 2) Take the gradient in x and y separately\
+    sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0)\
+    sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1)\
+    \
+    # 3) Calculate the magnitude \
+    sobel_xy = np.sqrt(sobelx**2 + sobely**2)\
+    \
+    # 4) Scale to 8-bit (0 - 255) and convert to type = np.uint8\
+    scaled_sobel = np.uint8(255*sobel_xy/np.max(sobel_xy))\
+    \
+    # 5) Create a binary mask where mag thresholds are met\
+    binary_output = (scaled_sobel >= mag_thresh[0]) & (scaled_sobel <= mag_thresh[1])\
+    binary_output = binary_output.astype(int)\
+    \
+    # 6) Return this mask as your binary_output image\
+    #binary_output = np.copy(img) # Remove this line\
+    return binary_output\
+    \
+# Run the function\
+mag_binary = mag_thresh(image, sobel_kernel=3, mag_thresh=(30, 100))\
+# Plot the result\
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))\
+f.tight_layout()\
+ax1.imshow(image)\
+ax1.set_title('Original Image', fontsize=50)\
+ax2.imshow(mag_binary, cmap='gray')\
+ax2.set_title('Thresholded Magnitude', fontsize=50)\
+plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)\
+\
+###==========================================\
+import numpy as np\
+import cv2\
+import matplotlib.pyplot as plt\
+import matplotlib.image as mpimg\
+import pickle\
+\
+\
+# Read in an image\
+image = mpimg.imread('signs_vehicles_xygrad.png')\
+\
+# Define a function that applies Sobel x and y, \
+# then computes the direction of the gradient\
+# and applies a threshold.\
+def dir_threshold(img, sobel_kernel=3, thresh=(0, np.pi/2)):\
+    \
+    # Apply the following steps to img\
+    # 1) Convert to grayscale\
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)\
+    \
+    # 2) Take the gradient in x and y separately\
+    \
+    \
+    # 3) Take the absolute value of the x and y gradients\
+    sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=sobel_kernel)\
+    sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=sobel_kernel)    \
+    \
+    abs_sobelx, abs_sobely = np.abs(sobelx), np.abs(sobely)\
+    \
+    # 4) Use np.arctan2(abs_sobely, abs_sobelx) to calculate the direction of the gradient \
+    sobel_angle = np.arctan2(abs_sobely, abs_sobelx)\
+    \
+    # 5) Create a binary mask where direction thresholds are met\
+    binary_output = (sobel_angle >= thresh[0]) & (sobel_angle <= thresh[1])\
+    binary_output = binary_output.astype(int)\
+    \
+    # 6) Return this mask as your binary_output image\
+    #binary_output = np.copy(img) # Remove this line\
+    return binary_output\
+    \
+# Run the function\
+dir_binary = dir_threshold(image, sobel_kernel=15, thresh=(0.7, 1.3))\
+# Plot the result\
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))\
+f.tight_layout()\
+ax1.imshow(image)\
+ax1.set_title('Original Image', fontsize=50)\
+ax2.imshow(dir_binary, cmap='gray')\
+ax2.set_title('Thresholded Grad. Dir.', fontsize=50)\
+plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)\
+\
+###==================\
+import matplotlib.pyplot as plt\
+import matplotlib.image as mpimg\
+import numpy as np\
+import cv2\
+\
+# Read in an image, you can also try test1.jpg or test4.jpg\
+image = mpimg.imread('test6.jpg') \
+\
+# Define a function that thresholds the S-channel of HLS\
+# Use exclusive lower bound (>) and inclusive upper (<=)\
+def hls_select(img, thresh=(0, 255)):\
+    # 1) Convert to HLS color space\
+    hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)\
+    s_channel = hls[:,:,2]\
+    \
+    # 2) Apply a threshold to the S channel\
+    binary_output = (s_channel > thresh[0]) & (s_channel <= thresh[1])\
+    binary_output = binary_output.astype(int)\
+    \
+    # 3) Return a binary image of threshold result\
+    #binary_output = np.copy(img) # placeholder line\
+    return binary_output\
+    \
+hls_binary = hls_select(image, thresh=(0, 255))\
+\
+# Plot the result\
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))\
+f.tight_layout()\
+ax1.imshow(image)\
+ax1.set_title('Original Image', fontsize=50)\
+ax2.imshow(hls_binary, cmap='gray')\
+ax2.set_title('Thresholded S', fontsize=50)\
+plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)\
+\
+plt.show()\
+\
+from collections import Counter\
+\
+cnts = Counter(hls_binary.reshape((-1)).tolist())\
+print(cnts)\
+\
+###===========================================\
+import numpy as np\
+import cv2\
+import matplotlib.pyplot as plt\
+import matplotlib.image as mpimg\
+\
+\
+image = mpimg.imread('bridge_shadow.jpg')\
+\
+# Edit this function to create your own pipeline.\
+def pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)):\
+    img = np.copy(img)\
+    # Convert to HLS color space and separate the V channel\
+    hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float)\
+    l_channel = hls[:,:,1]\
+    s_channel = hls[:,:,2]\
+    # Sobel x\
+    sobelx = cv2.Sobel(l_channel, cv2.CV_64F, 1, 0) # Take the derivative in x\
+    abs_sobelx = np.absolute(sobelx) # Absolute x derivative to accentuate lines away from horizontal\
+    scaled_sobel = np.uint8(255*abs_sobelx/np.max(abs_sobelx))\
+    \
+    # Threshold x gradient\
+    sxbinary = np.zeros_like(scaled_sobel)\
+    sxbinary[(scaled_sobel >= sx_thresh[0]) & (scaled_sobel <= sx_thresh[1])] = 1\
+    \
+    # Threshold color channel\
+    s_binary = np.zeros_like(s_channel)\
+    s_binary[(s_channel >= s_thresh[0]) & (s_channel <= s_thresh[1])] = 1\
+    # Stack each channel\
+    # Note color_binary[:, :, 0] is all 0s, effectively an all black image. It might\
+    # be beneficial to replace this channel with something else.\
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY).astype(np.float)/255.0\
+    #print("###gray", gray.min(), gray.max())\
+    color_binary = np.dstack((gray, sxbinary, s_binary)) * 255\
+    return color_binary\
+    \
+result = pipeline(image)\
+\
+# Plot the result\
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))\
+f.tight_layout()\
+\
+ax1.imshow(image)\
+ax1.set_title('Original Image', fontsize=40)\
+\
+ax2.imshow(result)\
+ax2.set_title('Pipeline Result', fontsize=40)\
+plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)\
+\
+###============================\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\fs24 \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {{\NeXTGraphic Pasted Graphic.tiff \width18240 \height9340 \appleattachmentpadding0 \appleembedtype0 \appleaqc
+}¬}\
+\
+###==========================================\
+# 
+\fs40 \cf10 \cb5 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec10 Implement Sliding Windows and Fit a Polynomial\
+\
+\pard\pardeftab720\sl400\partightenfactor0
+
+\f1\fs30 \cf8 \cb7 \strokec8 import\cf6 \strokec6  numpy \cf8 \strokec8 as\cf6 \strokec6  np\
+\cf8 \strokec8 import\cf6 \strokec6  cv2\
+\cf8 \strokec8 import\cf6 \strokec6  matplotlib.pyplot \cf8 \strokec8 as\cf6 \strokec6  plt\
+\
+\pard\pardeftab720\sl400\partightenfactor0
+\cf11 \strokec11 # Assuming you have created a warped binary image called "binary_warped"\cf6 \strokec6 \
+\cf11 \strokec11 # Take a histogram of the bottom half of the image\cf6 \strokec6 \
+histogram = np.sum(binary_warped[binary_warped.shape[\cf12 \strokec12 0\cf6 \strokec6 ]/\cf12 \strokec12 2\cf6 \strokec6 :,:], axis=\cf12 \strokec12 0\cf6 \strokec6 )\
+\cf11 \strokec11 # Create an output image to draw on and  visualize the result\cf6 \strokec6 \
+out_img = np.dstack((binary_warped, binary_warped, binary_warped))*\cf12 \strokec12 255\cf6 \strokec6 \
+\cf11 \strokec11 # Find the peak of the left and right halves of the histogram\cf6 \strokec6 \
+\cf11 \strokec11 # These will be the starting point for the left and right lines\cf6 \strokec6 \
+midpoint = np.int(histogram.shape[\cf12 \strokec12 0\cf6 \strokec6 ]/\cf12 \strokec12 2\cf6 \strokec6 )\
+leftx_base = np.argmax(histogram[:midpoint])\
+rightx_base = np.argmax(histogram[midpoint:]) + midpoint\
+\
+\cf11 \strokec11 # Choose the number of sliding windows\cf6 \strokec6 \
+nwindows = \cf12 \strokec12 9\cf6 \strokec6 \
+\cf11 \strokec11 # Set height of windows\cf6 \strokec6 \
+window_height = np.int(binary_warped.shape[\cf12 \strokec12 0\cf6 \strokec6 ]/nwindows)\
+\cf11 \strokec11 # Identify the x and y positions of all nonzero pixels in the image\cf6 \strokec6 \
+nonzero = binary_warped.nonzero()\
+nonzeroy = np.array(nonzero[\cf12 \strokec12 0\cf6 \strokec6 ])\
+nonzerox = np.array(nonzero[\cf12 \strokec12 1\cf6 \strokec6 ])\
+\cf11 \strokec11 # Current positions to be updated for each window\cf6 \strokec6 \
+leftx_current = leftx_base\
+rightx_current = rightx_base\
+\cf11 \strokec11 # Set the width of the windows +/- margin\cf6 \strokec6 \
+margin = \cf12 \strokec12 100\cf6 \strokec6 \
+\cf11 \strokec11 # Set minimum number of pixels found to recenter window\cf6 \strokec6 \
+minpix = \cf12 \strokec12 50\cf6 \strokec6 \
+\cf11 \strokec11 # Create empty lists to receive left and right lane pixel indices\cf6 \strokec6 \
+left_lane_inds = []\
+right_lane_inds = []\
+\
+\cf11 \strokec11 # Step through the windows one by one\cf6 \strokec6 \
+\pard\pardeftab720\sl400\partightenfactor0
+\cf8 \strokec8 for\cf6 \strokec6  window \cf8 \strokec8 in\cf6 \strokec6  range(nwindows):\
+    \cf11 \strokec11 # Identify window boundaries in x and y (and right and left)\cf6 \strokec6 \
+    win_y_low = binary_warped.shape[\cf12 \strokec12 0\cf6 \strokec6 ] - (window+\cf12 \strokec12 1\cf6 \strokec6 )*window_height\
+    win_y_high = binary_warped.shape[\cf12 \strokec12 0\cf6 \strokec6 ] - window*window_height\
+    win_xleft_low = leftx_current - margin\
+    win_xleft_high = leftx_current + margin\
+    win_xright_low = rightx_current - margin\
+    win_xright_high = rightx_current + margin\
+    \cf11 \strokec11 # Draw the windows on the visualization image\cf6 \strokec6 \
+    cv2.rectangle(out_img,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),\
+    (\cf12 \strokec12 0\cf6 \strokec6 ,\cf12 \strokec12 255\cf6 \strokec6 ,\cf12 \strokec12 0\cf6 \strokec6 ), \cf12 \strokec12 2\cf6 \strokec6 ) \
+    cv2.rectangle(out_img,(win_xright_low,win_y_low),(win_xright_high,win_y_high),\
+    (\cf12 \strokec12 0\cf6 \strokec6 ,\cf12 \strokec12 255\cf6 \strokec6 ,\cf12 \strokec12 0\cf6 \strokec6 ), \cf12 \strokec12 2\cf6 \strokec6 ) \
+    \cf11 \strokec11 # Identify the nonzero pixels in x and y within the window\cf6 \strokec6 \
+    good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & \
+    (nonzerox >= win_xleft_low) &  (nonzerox < win_xleft_high)).nonzero()[\cf12 \strokec12 0\cf6 \strokec6 ]\
+    good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & \
+    (nonzerox >= win_xright_low) &  (nonzerox < win_xright_high)).nonzero()[\cf12 \strokec12 0\cf6 \strokec6 ]\
+    \cf11 \strokec11 # Append these indices to the lists\cf6 \strokec6 \
+    left_lane_inds.append(good_left_inds)\
+    right_lane_inds.append(good_right_inds)\
+    \cf11 \strokec11 # If you found > minpix pixels, recenter next window on their mean position\cf6 \strokec6 \
+    \cf8 \strokec8 if\cf6 \strokec6  len(good_left_inds) > minpix:\
+        leftx_current = np.int(np.mean(nonzerox[good_left_inds]))\
+    \cf8 \strokec8 if\cf6 \strokec6  len(good_right_inds) > minpix:        \
+        rightx_current = np.int(np.mean(nonzerox[good_right_inds]))\
+\
+\pard\pardeftab720\sl400\partightenfactor0
+\cf11 \strokec11 # Concatenate the arrays of indices\cf6 \strokec6 \
+left_lane_inds = np.concatenate(left_lane_inds)\
+right_lane_inds = np.concatenate(right_lane_inds)\
+\
+\cf11 \strokec11 # Extract left and right line pixel positions\cf6 \strokec6 \
+leftx = nonzerox[left_lane_inds]\
+lefty = nonzeroy[left_lane_inds] \
+rightx = nonzerox[right_lane_inds]\
+righty = nonzeroy[right_lane_inds] \
+\
+\cf11 \strokec11 # Fit a second order polynomial to each\cf6 \strokec6 \
+left_fit = np.polyfit(lefty, leftx, \cf12 \strokec12 2\cf6 \strokec6 )\
+right_fit = np.polyfit(righty, rightx, \cf12 \strokec12 2\cf6 \strokec6 )\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs40 \cf10 \cb5 \strokec10 \
+###================================\
+# 
+\f2\b\fs48 Sliding Window Search\
+
+\f0\b0\fs40 \
+import numpy as np\
+import matplotlib.pyplot as plt\
+import matplotlib.image as mpimg\
+import glob\
+import cv2\
+\
+# Read in a thresholded image\
+warped = mpimg.imread('warped_example.jpg')\
+# window settings\
+window_width = 50 \
+window_height = 80 # Break image into 9 vertical layers since image height is 720\
+margin = 100 # How much to slide left and right for searching\
+\
+def window_mask(width, height, img_ref, center,level):\
+    output = np.zeros_like(img_ref)\
+    output[int(img_ref.shape[0]-(level+1)*height):int(img_ref.shape[0]-level*height),max(0,int(center-width/2)):min(int(center+width/2),img_ref.shape[1])] = 1\
+    return output\
+\
+def find_window_centroids(image, window_width, window_height, margin):\
+    \
+    window_centroids = [] # Store the (left,right) window centroid positions per level\
+    window = np.ones(window_width) # Create our window template that we will use for convolutions\
+    \
+    # First find the two starting positions for the left and right lane by using np.sum to get the vertical image slice\
+    # and then np.convolve the vertical image slice with the window template \
+    \
+    # Sum quarter bottom of image to get slice, could use a different ratio\
+    l_sum = np.sum(image[int(3*image.shape[0]/4):,:int(image.shape[1]/2)], axis=0)\
+    l_center = np.argmax(np.convolve(window,l_sum))-window_width/2\
+    r_sum = np.sum(image[int(3*image.shape[0]/4):,int(image.shape[1]/2):], axis=0)\
+    r_center = np.argmax(np.convolve(window,r_sum))-window_width/2+int(image.shape[1]/2)\
+    \
+    # Add what we found for the first layer\
+    window_centroids.append((l_center,r_center))\
+    \
+    # Go through each layer looking for max pixel locations\
+    for level in range(1,(int)(image.shape[0]/window_height)):\
+	    # convolve the window into the vertical slice of the image\
+	    image_layer = np.sum(image[int(image.shape[0]-(level+1)*window_height):int(image.shape[0]-level*window_height),:], axis=0)\
+	    conv_signal = np.convolve(window, image_layer)\
+	    # Find the best left centroid by using past left center as a reference\
+	    # Use window_width/2 as offset because convolution signal reference is at right side of window, not center of window\
+	    offset = window_width/2\
+	    l_min_index = int(max(l_center+offset-margin,0))\
+	    l_max_index = int(min(l_center+offset+margin,image.shape[1]))\
+	    l_center = np.argmax(conv_signal[l_min_index:l_max_index])+l_min_index-offset\
+	    # Find the best right centroid by using past right center as a reference\
+	    r_min_index = int(max(r_center+offset-margin,0))\
+	    r_max_index = int(min(r_center+offset+margin,image.shape[1]))\
+	    r_center = np.argmax(conv_signal[r_min_index:r_max_index])+r_min_index-offset\
+	    # Add what we found for that layer\
+	    window_centroids.append((l_center,r_center))\
+\
+    return window_centroids\
+\
+window_centroids = find_window_centroids(warped, window_width, window_height, margin)\
+\
+# If we found any window centers\
+if len(window_centroids) > 0:\
+\
+    # Points used to draw all the left and right windows\
+    l_points = np.zeros_like(warped)\
+    r_points = np.zeros_like(warped)\
+\
+    # Go through each level and draw the windows 	\
+    for level in range(0,len(window_centroids)):\
+        # Window_mask is a function to draw window areas\
+	    l_mask = window_mask(window_width,window_height,warped,window_centroids[level][0],level)\
+	    r_mask = window_mask(window_width,window_height,warped,window_centroids[level][1],level)\
+	    # Add graphic points from window mask here to total pixels found \
+	    l_points[(l_points == 255) | ((l_mask == 1) ) ] = 255\
+	    r_points[(r_points == 255) | ((r_mask == 1) ) ] = 255\
+\
+    # Draw the results\
+    template = np.array(r_points+l_points,np.uint8) # add both left and right window pixels together\
+    zero_channel = np.zeros_like(template) # create a zero color channel\
+    template = np.array(cv2.merge((zero_channel,template,zero_channel)),np.uint8) # make window pixels green\
+    warpage= np.dstack((warped, warped, warped))*255 # making the original road pixels 3 color channels\
+    output = cv2.addWeighted(warpage, 1, template, 0.5, 0.0) # overlay the orignal road image with window results\
+ \
+# If no window centers found, just display orginal road image\
+else:\
+    output = np.array(cv2.merge((warped,warped,warped)),np.uint8)\
+\
+# Display the final results\
+plt.imshow(output)\
+plt.title('window fitting results')\
+plt.show()\
+\
+###==========================\
+\
+
+\fs28 \cf9 \cb1 \strokec9 \
+\pard\pardeftab720\sl380\partightenfactor0
+\cf9 \
+}
