@@ -1,0 +1,50 @@
+def display_images(X, start_idx=0, end_idx=None,  step_val=1, 
+                   columns = 5, use_gray=False, 
+                   apply_fnc=None, figsize=(32,18)):
+    """
+    Display a set of images
+    Parameters
+    ----------
+    X: numpy array of images
+         Images to be displayed
+    start_idx: int
+         Start index for images
+    end_idx: int
+         End index for images
+    step_val: int
+        step value
+    columns: int
+         Number of columns of images
+    use_gray: bool
+         True for RGB images.  False for grayscale images.
+    apply_fnc: function
+         An function to apply to each image before displaying.
+    figsize: tuple of int
+         Display height and width of images.
+    """
+    if end_idx is None:
+        end_idx = X.shape[0]
+        
+    if apply_fnc is None:
+        apply_fnc = lambda image: image
+        
+    plt.figure(figsize=figsize)
+
+    num_of_images = end_idx - start_idx
+    rows = num_of_images / columns + 1
+    
+    cnt = 0
+    for i in range(start_idx, end_idx, step_val):
+        cnt += 1
+        image = X[i]
+        
+        plt.subplot(rows, columns, cnt)
+        
+        if use_gray:
+            plt.imshow(apply_fnc(image), cmap="gray")
+        else:
+            plt.imshow(apply_fnc(image)) 
+            
+    plt.tight_layout()
+            
+    plt.show()
